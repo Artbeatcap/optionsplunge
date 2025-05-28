@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Options Plunge - AI-Powered Trading Analysis{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center align-items-center">
+        <div class="col-lg-8 text-center">
+            <h1 class="display-4 fw-bold mb-4">
+                Master Options Trading with AI-Powered Analysis
+            </h1>
+            <p class="lead text-muted mb-4">
+                Transform your options trading with AI-powered analysis, comprehensive profit calculators, and personalized feedback.<br>
+                Track your trades, journal your progress, and get professional-grade tools to improve your trading performance.
+            </p>
+            <div class="d-grid gap-2 d-md-flex justify-content-md-center mb-4">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg px-4 me-md-2">
+                    <i class="fas fa-rocket me-2"></i>
+                    Get Started
+                </a>
+                <a href="{{ url_for('options_calculator') }}" class="btn btn-outline-primary btn-lg px-4">
+                    <i class="fas fa-calculator me-2"></i>
+                    Try Calculator
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="container py-5">
+    <h2 class="text-center mb-5">Why Choose Options Plunge?</h2>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon bg-primary bg-gradient text-white rounded-circle mb-3">
+                        <i class="fas fa-robot fa-2x"></i>
+                    </div>
+                    <h5 class="card-title">AI-Powered Analysis</h5>
+                    <p class="card-text text-muted">
+                        Get instant feedback on your trades with our advanced AI analysis system. 
+                        Learn from your mistakes and improve your strategy.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon bg-info bg-gradient text-white rounded-circle mb-3">
+                        <i class="fas fa-chart-line fa-2x"></i>
+                    </div>
+                    <h5 class="card-title">Comprehensive Tracking</h5>
+                    <p class="card-text text-muted">
+                        Track every aspect of your trades with detailed entry/exit points, 
+                        profit/loss calculations, and performance metrics.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon bg-success bg-gradient text-white rounded-circle mb-3">
+                        <i class="fas fa-calculator fa-2x"></i>
+                    </div>
+                    <h5 class="card-title">Options Calculator</h5>
+                    <p class="card-text text-muted">
+                        Analyze options strategies with our powerful calculator. 
+                        Get real-time Greeks, P&L scenarios, and risk metrics.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- How It Works Section -->
+<div class="bg-light py-5">
+    <div class="container">
+        <h2 class="text-center mb-5">How It Works</h2>
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="step-icon bg-primary text-white rounded-circle mb-3">
+                        <i class="fas fa-user-plus fa-2x"></i>
+                    </div>
+                    <h5>1. Create Account</h5>
+                    <p class="text-muted">Sign up for free and get instant access to all features</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="step-icon bg-info text-white rounded-circle mb-3">
+                        <i class="fas fa-exchange-alt fa-2x"></i>
+                    </div>
+                    <h5>2. Log Trades</h5>
+                    <p class="text-muted">Record your trades with detailed entry/exit information</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="step-icon bg-success text-white rounded-circle mb-3">
+                        <i class="fas fa-robot fa-2x"></i>
+                    </div>
+                    <h5>3. Get Analysis</h5>
+                    <p class="text-muted">Receive AI-powered feedback on your trading decisions</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="step-icon bg-warning text-white rounded-circle mb-3">
+                        <i class="fas fa-chart-bar fa-2x"></i>
+                    </div>
+                    <h5>4. Track Progress</h5>
+                    <p class="text-muted">Monitor your performance and improve over time</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Call to Action -->
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+            <h2 class="mb-4">Ready to Improve Your Trading?</h2>
+            <p class="lead text-muted mb-4">
+                Join thousands of traders who are already using Options Plunge to enhance their trading performance.
+            </p>
+            <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg px-4 me-md-2">
+                    <i class="fas fa-rocket me-2"></i>
+                    Get Started Now
+                </a>
+                <a href="{{ url_for('options_calculator') }}" class="btn btn-outline-primary btn-lg px-4">
+                    <i class="fas fa-calculator me-2"></i>
+                    Try Calculator
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.feature-icon {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+.step-icon {
+    width: 100px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+}
+</style>
+{% endblock %} 

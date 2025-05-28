@@ -1,0 +1,905 @@
+{% extends "base.html" %}
+
+{% block title %}Options Calculator - Options Plunge{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2 mb-0 d-flex align-items-center">
+        <i class="fas fa-chart-line text-primary me-2"></i>
+        Options Profit Calculator
+    </h1>
+</div>
+
+<!-- Symbol Input Form -->
+<div class="card mb-4 mt-3" style="max-width: 600px; margin: 0 auto;">
+    <div class="card-header" style="background: linear-gradient(135deg, #17a2b8, #3498db); color: white; font-weight: 600;">
+        <h5 class="mb-0">
+            <i class="fas fa-search me-2"></i>
+            Stock Symbol & Expiration
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="mb-3">
+                <label for="symbol" class="form-label">Stock Symbol</label>
+                <div class="position-relative">
+                    <input type="text" class="form-control" id="symbol" name="symbol" 
+                           value="{{ context.symbol or '' }}" required 
+                           placeholder="Search by company name or symbol..." 
+                           autocomplete="off" style="text-transform: uppercase;">
+                    <div id="searchResults" class="list-group position-absolute" 
+                         style="z-index: 1000; width: 100%; display: none; margin-top: 2px; max-height: 300px; overflow-y: auto;"></div>
+                </div>
+            </div>
+            {% if context.expiration_dates %}
+            <div class="mb-3">
+                <label for="expiration_date" class="form-label">Expiration Date</label>
+                <select class="form-select" id="expiration_date" name="expiration_date">
+                    <option value="">Select expiration...</option>
+                    {% for date in context.expiration_dates %}
+                    <option value="{{ date }}" {% if date == context.selected_date %}selected{% endif %}>
+                        {{ date }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <div class="mb-2">
+                <button type="submit" class="btn btn-primary" id="optionsButton">
+                    <i class="fas fa-search me-1"></i>
+                    {% if not context.expiration_dates %}
+                        Get Expiration Dates
+                    {% elif context.expiration_dates and not context.selected_date %}
+                        Select Expiration & Get Options Chain
+                    {% else %}
+                        Get Options Chain
+                    {% endif %}
+                </button>
+                {% if context.expiration_dates and not context.selected_date %}
+                <small class="form-text text-muted mt-1 d-block">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Please select an expiration date to load the options chain.
+                </small>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Stock Info Display -->
+{% if context.current_price %}
+<div class="alert alert-info">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <strong>{{ context.stock_name or context.symbol }}</strong> - 
+            Current Price: <strong>${{ "%.2f"|format(context.current_price) }}</strong>
+            {% if context.selected_date %}
+            <br><strong>Selected Expiration:</strong> {{ context.selected_date }}
+            {% endif %}
+        </div>
+        <div class="col-md-4 text-end">
+            <span class="badge bg-primary">Live Data</span>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Options Chain -->
+{% if context.combined_options %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-table me-2"></i>
+            Options Chain - {{ context.symbol }}
+        </h5>
+    </div>
+    <div class="card-body">
+        <!-- Desktop Table View -->
+        <div class="d-none d-lg-block">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th colspan="6" class="text-center text-white" style="background-color: #0dcaf0;">CALLS</th>
+                            <th colspan="6" class="text-center text-white" style="background-color: #6c757d;">PUTS</th>
+                        </tr>
+                        <tr>
+                            <th>Strike</th>
+                            <th>Last</th>
+                            <th>Bid</th>
+                            <th>Ask</th>
+                            <th>Volume</th>
+                            <th>Analysis</th>
+                            <th>Strike</th>
+                            <th>Last</th>
+                            <th>Bid</th>
+                            <th>Ask</th>
+                            <th>Volume</th>
+                            <th>Analysis</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for call, put in context.combined_options %}
+                        {% set call_itm = call.strike < context.current_price %}
+                        {% set put_itm = put.strike > context.current_price %}
+                        {% set at_the_money = (call.strike == context.current_price or put.strike == context.current_price) %}
+                        
+                        <!-- Insert current stock price marker -->
+                        {% if loop.index > 1 %}
+                            {% set prev_call, prev_put = context.combined_options[loop.index0 - 1] %}
+                            {% if prev_call.strike < context.current_price and call.strike > context.current_price %}
+                                <tr style="background-color: #e9ecef; height: 8px;">
+                                    <td colspan="12" class="text-center text-dark p-2" style="font-weight: bold; font-size: 14px;">
+                                        ← Current Stock Price: ${{ "%.2f"|format(context.current_price) }} →
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endif %}
+                        
+                        <tr {% if at_the_money %}style="border-top: 3px solid #ffc107; border-bottom: 3px solid #ffc107; background-color: #fff3cd;"{% elif call_itm and not put_itm %}style="background-color: #f8f9fa;"{% elif not call_itm and put_itm %}style="background-color: #f8f9fa;"{% endif %}>
+                            <!-- Call Option -->
+                            <td {% if call_itm %}style="background-color: #d1ecf1; font-weight: bold;"{% endif %}>
+                                ${{ "%.2f"|format(call.strike) }}
+                            </td>
+                            <td {% if call_itm %}style="background-color: #d1ecf1;"{% endif %}>
+                                ${{ "%.2f"|format(call.last) if call.last else "N/A" }}
+                            </td>
+                            <td {% if call_itm %}style="background-color: #d1ecf1;"{% endif %}>
+                                ${{ "%.2f"|format(call.bid) if call.bid else "N/A" }}
+                            </td>
+                            <td {% if call_itm %}style="background-color: #d1ecf1;"{% endif %}>
+                                ${{ "%.2f"|format(call.ask) if call.ask else "N/A" }}
+                            </td>
+                            <td {% if call_itm %}style="background-color: #d1ecf1;"{% endif %}>
+                                {{ call.volume if call.volume else "0" }}
+                            </td>
+                            <td {% if call_itm %}style="background-color: #d1ecf1;"{% endif %}>
+                                <button class="btn btn-sm" style="background-color: #0dcaf0; border-color: #0dcaf0; color: white;" 
+                                        onclick="analyzeOption('call', {{ call.strike }}, {{ context.current_price }}, '{{ context.selected_date }}', {{ call.last if call.last else 0 }})">
+                                    P&L
+                                </button>
+                            </td>
+                            
+                            <!-- Put Option -->
+                            <td {% if put_itm %}style="background-color: #f8d7da; font-weight: bold;"{% endif %}>
+                                ${{ "%.2f"|format(put.strike) }}
+                            </td>
+                            <td {% if put_itm %}style="background-color: #f8d7da;"{% endif %}>
+                                ${{ "%.2f"|format(put.last) if put.last else "N/A" }}
+                            </td>
+                            <td {% if put_itm %}style="background-color: #f8d7da;"{% endif %}>
+                                ${{ "%.2f"|format(put.bid) if put.bid else "N/A" }}
+                            </td>
+                            <td {% if put_itm %}style="background-color: #f8d7da;"{% endif %}>
+                                ${{ "%.2f"|format(put.ask) if put.ask else "N/A" }}
+                            </td>
+                            <td {% if put_itm %}style="background-color: #f8d7da;"{% endif %}>
+                                {{ put.volume if put.volume else "0" }}
+                            </td>
+                            <td {% if put_itm %}style="background-color: #f8d7da;"{% endif %}>
+                                <button class="btn btn-sm" style="background-color: #6c757d; border-color: #6c757d; color: white;" 
+                                        onclick="analyzeOption('put', {{ put.strike }}, {{ context.current_price }}, '{{ context.selected_date }}', {{ put.last if put.last else 0 }})">
+                                    P&L
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Mobile View -->
+        <div class="d-lg-none">
+            <div class="mb-3">
+                <div class="btn-group w-100" role="group">
+                    <button type="button" class="btn btn-outline-info active" id="showCalls">CALLS</button>
+                    <button type="button" class="btn btn-outline-secondary" id="showPuts">PUTS</button>
+                </div>
+            </div>
+
+            <!-- Calls Mobile View -->
+            <div id="callsView" class="mobile-options-view">
+                <h5 class="mb-3" style="color: #0dcaf0;">Call Options</h5>
+                {% for call, put in context.combined_options %}
+                {% set call_itm = call.strike < context.current_price %}
+                {% set at_the_money = call.strike == context.current_price %}
+                
+                <div class="card mb-2" style="border-color: #0dcaf0; {% if call_itm %}background-color: #d1ecf1;{% elif at_the_money %}background-color: #fff3cd; border-color: #ffc107; border-width: 3px;{% endif %}">
+                    <div class="card-body py-2">
+                        <div class="row align-items-center">
+                            <div class="col-4">
+                                <h6 class="mb-1">${{ "%.2f"|format(call.strike) }}</h6>
+                                <small class="text-muted">
+                                    Strike 
+                                    {% if call_itm %}
+                                        <span style="color: #0dcaf0; font-weight: bold;">(ITM)</span>
+                                    {% elif at_the_money %}
+                                        <span style="color: #ffc107; font-weight: bold;">(ATM)</span>
+                                    {% else %}
+                                        <span class="text-muted">(OTM)</span>
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div><strong>${{ "%.2f"|format(call.last) if call.last else "N/A" }}</strong></div>
+                                <small class="text-muted">Last</small>
+                            </div>
+                            <div class="col-4">
+                                <button class="btn btn-sm w-100" style="background-color: #0dcaf0; border-color: #0dcaf0; color: white;" 
+                                        onclick="analyzeOption('call', {{ call.strike }}, {{ context.current_price }}, '{{ context.selected_date }}', {{ call.last if call.last else 0 }})">
+                                    P&L
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Puts Mobile View -->
+            <div id="putsView" class="mobile-options-view" style="display: none;">
+                <h5 class="mb-3" style="color: #6c757d;">Put Options</h5>
+                {% for call, put in context.combined_options %}
+                {% set put_itm = put.strike > context.current_price %}
+                {% set at_the_money = put.strike == context.current_price %}
+                
+                <div class="card mb-2" style="border-color: #6c757d; {% if put_itm %}background-color: #f8d7da;{% elif at_the_money %}background-color: #fff3cd; border-color: #ffc107; border-width: 3px;{% endif %}">
+                    <div class="card-body py-2">
+                        <div class="row align-items-center">
+                            <div class="col-4">
+                                <h6 class="mb-1">${{ "%.2f"|format(put.strike) }}</h6>
+                                <small class="text-muted">
+                                    Strike 
+                                    {% if put_itm %}
+                                        <span style="color: #6c757d; font-weight: bold;">(ITM)</span>
+                                    {% elif at_the_money %}
+                                        <span style="color: #ffc107; font-weight: bold;">(ATM)</span>
+                                    {% else %}
+                                        <span class="text-muted">(OTM)</span>
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div><strong>${{ "%.2f"|format(put.last) if put.last else "N/A" }}</strong></div>
+                                <small class="text-muted">Last</small>
+                            </div>
+                            <div class="col-4">
+                                <button class="btn btn-sm w-100" style="background-color: #6c757d; border-color: #6c757d; color: white;" 
+                                        onclick="analyzeOption('put', {{ put.strike }}, {{ context.current_price }}, '{{ context.selected_date }}', {{ put.last if put.last else 0 }})">
+                                    P&L
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i>
+    {% if context.symbol and not context.expiration_dates %}
+        Please click "Get Expiration Dates" to see available expiration dates for {{ context.symbol }}.
+    {% elif context.symbol and context.expiration_dates and not context.selected_date %}
+        Please select an expiration date to view the options chain.
+    {% else %}
+        Enter a stock symbol to view its options chain.
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- P&L Analysis Modal -->
+<div class="modal fade" id="pnlModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Option P&L Analysis</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="pnlAnalysisContent">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Calculating analysis...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="addToTradesBtn">Add to Trades</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile Tabs (only visible on mobile) -->
+<div class="d-lg-none mb-3">
+  <ul class="nav nav-tabs nav-justified" id="mobileTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="tab-chain" data-bs-toggle="tab" data-bs-target="#tabChain" type="button" role="tab">Chain</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-scenarios" data-bs-toggle="tab" data-bs-target="#tabScenarios" type="button" role="tab">P&L Scenarios</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-chart" data-bs-toggle="tab" data-bs-target="#tabChart" type="button" role="tab">P&L Chart</button>
+    </li>
+  </ul>
+  <div class="tab-content mt-2" id="mobileTabContent">
+    <div class="tab-pane fade show active" id="tabChain" role="tabpanel">
+      <!-- Mobile Chain Card List (existing code) -->
+      <div id="mobileChainCards">
+        <!-- Calls Mobile View -->
+        <h5 class="mb-3" style="color: #0dcaf0;">Call Options</h5>
+        {% for call, put in context.combined_options %}
+        {% set call_itm = call.strike < context.current_price %}
+        {% set at_the_money = call.strike == context.current_price %}
+        <div class="card mb-2" style="border-color: #0dcaf0; {% if call_itm %}background-color: #d1ecf1;{% elif at_the_money %}background-color: #fff3cd; border-color: #ffc107; border-width: 3px;{% endif %}">
+          <div class="card-body py-2">
+            <div class="row align-items-center">
+              <div class="col-4">
+                <h6 class="mb-1">${{ "%.2f"|format(call.strike) }}</h6>
+                <small class="text-muted">Strike {% if call_itm %}<span style="color: #0dcaf0; font-weight: bold;">(ITM)</span>{% elif at_the_money %}<span style="color: #ffc107; font-weight: bold;">(ATM)</span>{% else %}<span class="text-muted">(OTM)</span>{% endif %}</small>
+              </div>
+              <div class="col-4 text-center">
+                <div><strong>${{ "%.2f"|format(call.last) if call.last else "N/A" }}</strong></div>
+                <small class="text-muted">Last</small>
+              </div>
+              <div class="col-4">
+                <button class="btn btn-sm w-100" style="background-color: #0dcaf0; border-color: #0dcaf0; color: white;" onclick="analyzeOption('call', {{ call.strike }}, {{ context.current_price }}, '{{ context.selected_date }}', {{ call.last if call.last else 0 }})">P&L</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+        <!-- Puts Mobile View -->
+        <h5 class="mb-3 mt-4" style="color: #6c757d;">Put Options</h5>
+        {% for call, put in context.combined_options %}
+        {% set put_itm = put.strike > context.current_price %}
+        {% set at_the_money = put.strike == context.current_price %}
+        <div class="card mb-2" style="border-color: #6c757d; {% if put_itm %}background-color: #f8d7da;{% elif at_the_money %}background-color: #fff3cd; border-color: #ffc107; border-width: 3px;{% endif %}">
+          <div class="card-body py-2">
+            <div class="row align-items-center">
+              <div class="col-4">
+                <h6 class="mb-1">${{ "%.2f"|format(put.strike) }}</h6>
+                <small class="text-muted">Strike {% if put_itm %}<span style="color: #6c757d; font-weight: bold;">(ITM)</span>{% elif at_the_money %}<span style="color: #ffc107; font-weight: bold;">(ATM)</span>{% else %}<span class="text-muted">(OTM)</span>{% endif %}</small>
+              </div>
+              <div class="col-4 text-center">
+                <div><strong>${{ "%.2f"|format(put.last) if put.last else "N/A" }}</strong></div>
+                <small class="text-muted">Last</small>
+              </div>
+              <div class="col-4">
+                <button class="btn btn-sm w-100" style="background-color: #6c757d; border-color: #6c757d; color: white;" onclick="analyzeOption('put', {{ put.strike }}, {{ context.current_price }}, '{{ context.selected_date }}', {{ put.last if put.last else 0 }})">P&L</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="tab-pane fade" id="tabScenarios" role="tabpanel">
+      <!-- Scenarios Table (will be filled by JS when modal is shown, or you can render a placeholder) -->
+      <div id="mobileScenariosContent" class="overflow-auto"></div>
+    </div>
+    <div class="tab-pane fade" id="tabChart" role="tabpanel">
+      <div id="mobileChartContent"></div>
+    </div>
+  </div>
+</div>
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Stock symbol autocomplete functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const symbolInput = document.getElementById('symbol');
+    const searchResults = document.getElementById('searchResults');
+    let searchTimeout;
+    
+    if (symbolInput && searchResults) {
+        symbolInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            
+            if (query.length < 1) {
+                searchResults.style.display = 'none';
+                return;
+            }
+            
+            searchTimeout = setTimeout(() => {
+                fetch(`/search_stocks?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        searchResults.innerHTML = '';
+                        
+                        if (data.length > 0) {
+                            data.forEach(stock => {
+                                const item = document.createElement('a');
+                                item.className = 'list-group-item list-group-item-action';
+                                item.href = '#';
+                                item.innerHTML = `
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>${stock.symbol}</strong>
+                                            <br>
+                                            <small class="text-muted">${stock.name}</small>
+                                        </div>
+                                        <i class="fas fa-chevron-right text-muted"></i>
+                                    </div>
+                                `;
+                                
+                                item.addEventListener('click', function(e) {
+                                    e.preventDefault();
+                                    symbolInput.value = stock.symbol;
+                                    searchResults.style.display = 'none';
+                                    symbolInput.focus();
+                                });
+                                
+                                searchResults.appendChild(item);
+                            });
+                            
+                            searchResults.style.display = 'block';
+                        } else {
+                            searchResults.style.display = 'none';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching search results:', error);
+                        searchResults.style.display = 'none';
+                    });
+            }, 300);
+        });
+        
+        // Hide search results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!symbolInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.style.display = 'none';
+            }
+        });
+        
+        // Handle keyboard navigation
+        symbolInput.addEventListener('keydown', function(e) {
+            const items = searchResults.querySelectorAll('.list-group-item');
+            let activeIndex = -1;
+            
+            items.forEach((item, index) => {
+                if (item.classList.contains('active')) {
+                    activeIndex = index;
+                }
+            });
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (activeIndex < items.length - 1) {
+                    if (activeIndex >= 0) items[activeIndex].classList.remove('active');
+                    items[activeIndex + 1].classList.add('active');
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (activeIndex > 0) {
+                    items[activeIndex].classList.remove('active');
+                    items[activeIndex - 1].classList.add('active');
+                }
+            } else if (e.key === 'Enter' && activeIndex >= 0) {
+                e.preventDefault();
+                items[activeIndex].click();
+            } else if (e.key === 'Escape') {
+                searchResults.style.display = 'none';
+            }
+        });
+    }
+    
+    // Mobile view toggle
+    const showCalls = document.getElementById('showCalls');
+    const showPuts = document.getElementById('showPuts');
+    const callsView = document.getElementById('callsView');
+    const putsView = document.getElementById('putsView');
+    
+    if (showCalls && showPuts) {
+        showCalls.addEventListener('click', function() {
+            showCalls.classList.add('active');
+            showPuts.classList.remove('active');
+            callsView.style.display = 'block';
+            putsView.style.display = 'none';
+        });
+        
+        showPuts.addEventListener('click', function() {
+            showPuts.classList.add('active');
+            showCalls.classList.remove('active');
+            putsView.style.display = 'block';
+            callsView.style.display = 'none';
+        });
+    }
+
+    // Auto search functionality
+    document.getElementById('symbol').addEventListener('input', function() {
+        const query = this.value.trim();
+        if (query.length >= 1) {
+            fetch(`/search_stocks?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    const resultsContainer = document.getElementById('searchResults');
+                    resultsContainer.innerHTML = '';
+                    
+                    if (data.length > 0) {
+                        data.forEach(stock => {
+                            const item = document.createElement('a');
+                            item.href = '#';
+                            item.className = 'list-group-item list-group-item-action';
+                            item.innerHTML = `<strong>${stock.symbol}</strong> - ${stock.name}`;
+                            item.onclick = function(e) {
+                                e.preventDefault();
+                                document.getElementById('symbol').value = stock.symbol;
+                                resultsContainer.style.display = 'none';
+                            };
+                            resultsContainer.appendChild(item);
+                        });
+                        resultsContainer.style.display = 'block';
+                    } else {
+                        resultsContainer.style.display = 'none';
+                    }
+                });
+        } else {
+            document.getElementById('searchResults').style.display = 'none';
+        }
+    });
+
+    // Hide search results when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!document.getElementById('symbol').contains(e.target)) {
+            document.getElementById('searchResults').style.display = 'none';
+        }
+    });
+
+    // Update button text when expiration date is selected
+    const expirationSelect = document.getElementById('expiration_date');
+    const optionsButton = document.getElementById('optionsButton');
+    
+    if (expirationSelect && optionsButton) {
+        expirationSelect.addEventListener('change', function() {
+            const buttonIcon = '<i class="fas fa-search me-1"></i>';
+            if (this.value) {
+                optionsButton.innerHTML = buttonIcon + 'Get Options Chain';
+                optionsButton.className = 'btn btn-success';
+            } else {
+                optionsButton.innerHTML = buttonIcon + 'Select Expiration & Get Options Chain';
+                optionsButton.className = 'btn btn-primary';
+            }
+        });
+    }
+    
+    // Auto-focus expiration dropdown after getting expiration dates
+    {% if context.expiration_dates and not context.selected_date %}
+    setTimeout(() => {
+        const expirationDropdown = document.getElementById('expiration_date');
+        if (expirationDropdown) {
+            expirationDropdown.focus();
+            expirationDropdown.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }, 100);
+    {% endif %}
+
+    // Add to Trades button logic
+    const addToTradesBtn = document.getElementById('addToTradesBtn');
+    if (addToTradesBtn) {
+        addToTradesBtn.addEventListener('click', function() {
+            if (!window.isAuthenticated) {
+                const loginModal = new bootstrap.Modal(document.getElementById('loginRequiredModal'));
+                loginModal.show();
+            } else {
+                addToTrades();
+            }
+        });
+    }
+
+    // Mobile tab switching logic
+    if (window.innerWidth < 992) {
+        // When a P&L button is clicked, also fill the mobile scenario/chart tabs
+        window.displayPnLAnalysis = function(analysis, optionType, strike, premium) {
+            // ... existing code ...
+            // Render scenario table in mobileScenariosContent
+            document.getElementById('mobileScenariosContent').innerHTML = document.getElementById('pnlAnalysisContent').querySelector('#nav-scenarios')?.innerHTML || '';
+            // Render chart in mobileChartContent
+            document.getElementById('mobileChartContent').innerHTML = document.getElementById('pnlAnalysisContent').querySelector('#nav-chart')?.innerHTML || '';
+            // Re-render the chart for mobile
+            setTimeout(() => {
+                if (document.getElementById('mobileChartContent').querySelector('#pnlChart')) {
+                    renderPnLChart(analysis);
+                }
+            }, 100);
+        }
+    }
+});
+
+// Option analysis function
+function analyzeOption(optionType, strike, currentPrice, expirationDate, premium) {
+    const modal = new bootstrap.Modal(document.getElementById('pnlModal'));
+    modal.show();
+    
+    // Show loading state
+    document.getElementById('pnlAnalysisContent').innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Calculating P&L analysis...</p>
+        </div>
+    `;
+    
+    // Calculate P&L
+    fetch('/tools/options-pnl', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            option_type: optionType,
+            strike: strike,
+            current_price: currentPrice,
+            expiration_date: expirationDate,
+            premium: premium,
+            quantity: 1
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayPnLAnalysis(data.analysis, optionType, strike, premium);
+        } else {
+            document.getElementById('pnlAnalysisContent').innerHTML = `
+                <div class="alert alert-danger">
+                    <strong>Error:</strong> ${data.error}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        document.getElementById('pnlAnalysisContent').innerHTML = `
+            <div class="alert alert-danger">
+                <strong>Error:</strong> Failed to calculate analysis
+            </div>
+        `;
+    });
+}
+
+function displayPnLAnalysis(analysis, optionType, strike, premium) {
+    const optionDetailsTable = `
+        <h6 class="text-info"><i class="fas fa-info-circle me-2"></i>Option Details</h6>
+        <table class="table table-sm mb-4">
+            <tr>
+                <td>Type</td>
+                <td><strong>${analysis.option_info.type.toUpperCase()}</strong></td>
+            </tr>
+            <tr>
+                <td>Strike Price</td>
+                <td><strong>$${analysis.option_info.strike.toFixed(2)}</strong></td>
+            </tr>
+            <tr>
+                <td>Premium</td>
+                <td><strong>$${analysis.option_info.premium.toFixed(2)}</strong></td>
+            </tr>
+            <tr>
+                <td>Days to Expiration</td>
+                <td><strong>${analysis.option_info.days_to_expiration}</strong></td>
+            </tr>
+            <tr>
+                <td>Implied Volatility</td>
+                <td><strong>${analysis.option_info.implied_volatility}%</strong></td>
+            </tr>
+        </table>
+    `;
+    const content = `
+        <div class="row">
+            <div class="col-12">
+                <nav>
+                    <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                        <button class="nav-link active" id="nav-scenarios-tab" data-bs-toggle="tab" data-bs-target="#nav-scenarios" type="button" role="tab">P&L Scenarios</button>
+                        <button class="nav-link" id="nav-chart-tab" data-bs-toggle="tab" data-bs-target="#nav-chart" type="button" role="tab">P&L Chart</button>
+                    </div>
+                </nav>
+                <div class="tab-content mt-3" id="nav-tabContent">
+                    <!-- Scenarios Tab -->
+                    <div class="tab-pane fade show active" id="nav-scenarios" role="tabpanel">
+                        ${optionDetailsTable}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Stock Price</th>
+                                        ${analysis.option_info.time_points.map(days => 
+                                            `<th>${days} Days Left</th>`
+                                        ).join('')}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${analysis.pnl_data.map(pricePoint => `
+                                        <tr>
+                                            <td>$${pricePoint.stock_price.toFixed(2)}</td>
+                                            ${pricePoint.time_data.map(timePoint => {
+                                                const pnlClass = timePoint.pnl >= 0 ? 'text-success' : 'text-danger';
+                                                const bgClass = timePoint.pnl >= 0 ? 'bg-success bg-opacity-10' : 'bg-danger bg-opacity-10';
+                                                return `
+                                                    <td class="text-center ${bgClass}">
+                                                        <span class="${pnlClass}">
+                                                            <strong>${timePoint.pnl >= 0 ? '+' : ''}$${timePoint.pnl.toFixed(0)}</strong>
+                                                            <br>
+                                                            <small>${timePoint.return_percent.toFixed(1)}%</small>
+                                                        </span>
+                                                    </td>
+                                                `;
+                                            }).join('')}
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- Chart Tab -->
+                    <div class="tab-pane fade" id="nav-chart" role="tabpanel">
+                        ${optionDetailsTable}
+                        <div class="mt-3">
+                            <div class="mb-2 text-muted" style="font-size: 0.95em;">
+                                <i class="fas fa-mouse-pointer me-1"></i>
+                                <strong>Tip:</strong> Drag to pan, scroll to zoom, or click <b>Reset Zoom</b> below to recenter.
+                            </div>
+                            <h6 class="text-info"><i class="fas fa-chart-area me-2"></i>Profit/Loss Chart</h6>
+                            <div id="pnlChart"></div>
+                            <div class="mt-2 text-center">
+                                <button id="resetZoomBtn" class="btn btn-outline-secondary btn-sm"><i class="fas fa-search-minus me-1"></i>Reset Zoom</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('pnlAnalysisContent').innerHTML = content;
+    
+    // Create P&L chart when the chart tab is shown
+    document.getElementById('nav-chart-tab').addEventListener('click', function() {
+        setTimeout(() => {
+            renderPnLChart(analysis);
+        }, 100);
+    });
+    // Also render immediately if chart tab is already active
+    if (document.getElementById('nav-chart').classList.contains('active')) {
+        setTimeout(() => {
+            renderPnLChart(analysis);
+        }, 100);
+    }
+    // Reset zoom button
+    document.getElementById('resetZoomBtn').addEventListener('click', function() {
+        renderPnLChart(analysis, true);
+    });
+}
+
+function renderPnLChart(analysis, resetZoom=false) {
+    // Create multiple traces for different timeframes
+    const traces = [];
+    // Define color palette for different timeframes
+    const colorPalette = [
+        '#1f77b4',  // blue
+        '#2ca02c',  // green
+        '#ff7f0e',  // orange
+        '#d62728',  // red
+        '#9467bd'   // purple
+    ];
+    // Add traces for each timeframe
+    analysis.option_info.time_points.forEach((daysLeft, index) => {
+        const pnlCurve = analysis.pnl_data.map(point => point.time_data[index].pnl);
+        const trace = {
+            x: analysis.pnl_data.map(point => point.stock_price),
+            y: pnlCurve,
+            type: 'scatter',
+            mode: 'lines',
+            name: `${daysLeft} Days Left`,
+            line: {
+                color: colorPalette[index % colorPalette.length],
+                width: daysLeft === 0 ? 4 : 2  // Thicker line for expiration
+            }
+        };
+        traces.push(trace);
+    });
+    // Add zero line for reference
+    const zeroLine = {
+        x: analysis.pnl_data.map(point => point.stock_price),
+        y: analysis.pnl_data.map(() => 0),
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Breakeven',
+        line: {color: 'rgba(0, 0, 0, 0.3)', width: 1, dash: 'dash'},
+        showlegend: false
+    };
+    traces.push(zeroLine);
+    // Add current stock price line
+    const currentPriceLine = {
+        x: [analysis.option_info.current_stock_price, analysis.option_info.current_stock_price],
+        y: [-5000, 5000],  // Extend beyond typical P&L range
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Current Stock Price',
+        line: {color: 'rgba(255, 165, 0, 0.7)', width: 2, dash: 'dot'},
+        showlegend: true
+    };
+    traces.push(currentPriceLine);
+    // Zoom in on the price range and P&L range
+    const xPrices = analysis.pnl_data.map(point => point.stock_price);
+    const yPnls = [].concat(...analysis.pnl_data.map(point => point.time_data.map(t => t.pnl)));
+    const xMin = Math.min(...xPrices);
+    const xMax = Math.max(...xPrices);
+    const yMin = Math.min(...yPnls);
+    const yMax = Math.max(...yPnls);
+    const xPad = (xMax - xMin) * 0.1;
+    const yPad = (yMax - yMin) * 0.1;
+    // Center x on current price, y on 0
+    let xRange, yRange;
+    if (!resetZoom) {
+        const current = analysis.option_info.current_stock_price;
+        const xWindow = (xMax - xMin) * 0.5;
+        xRange = [current - xWindow/2, current + xWindow/2];
+        const yWindow = Math.max(Math.abs(yMin), Math.abs(yMax), 500) * 1.1;
+        yRange = [-yWindow, yWindow];
+    } else {
+        xRange = [xMin + xPad, xMax - xPad];
+        yRange = [yMin + yPad, yMax - yPad];
+    }
+    const layout = {
+        title: 'Option P&L Analysis',
+        xaxis: {
+            title: 'Stock Price ($)',
+            showgrid: true,
+            gridcolor: 'rgba(0,0,0,0.1)',
+            range: xRange
+        },
+        yaxis: {
+            title: 'P&L ($)',
+            showgrid: true,
+            gridcolor: 'rgba(0,0,0,0.1)',
+            range: yRange
+        },
+        hovermode: 'closest',
+        showlegend: true,
+        legend: {
+            x: 0,
+            y: 1,
+            orientation: 'h'
+        },
+        margin: {
+            l: 50,
+            r: 50,
+            t: 50,
+            b: 50
+        }
+    };
+    const config = {
+        responsive: true,
+        displayModeBar: true,
+        modeBarButtonsToAdd: ['pan2d', 'select2d', 'lasso2d', 'autoScale2d'],
+        modeBarButtonsToRemove: ['hoverClosestCartesian', 'hoverCompareCartesian']
+    };
+    Plotly.newPlot('pnlChart', traces, layout, config);
+}
+
+function addToTrades() {
+    // This would integrate with the trade tracking system
+    alert('Feature coming soon: Add this option to your trade tracking!');
+}
+
+// Add mobile-specific CSS
+<style>
+@media (max-width: 991.98px) {
+  #mobileChainCards .card { font-size: 1.1em; }
+  #mobileChainCards .btn { font-size: 1em; padding: 0.75em 0; }
+  #mobileScenariosContent { overflow-x: auto; }
+  #mobileScenariosContent table { min-width: 500px; }
+  #mobileChartContent { min-height: 300px; }
+}
+</style>
+{% endblock %}
+{% endblock %} 

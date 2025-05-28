@@ -1,0 +1,792 @@
+{% extends "base.html" %}
+
+{% block title %}Add Trade - AI Trading Analysis{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-plus text-primary me-2"></i>
+        Add New Trade
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('trades') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>
+            Back to Trades
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Trade Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Basic Trade Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.symbol.label(class="form-label fw-bold") }}
+                                {{ form.symbol(class="form-control") }}
+                                {% if form.symbol.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.symbol.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.trade_type.label(class="form-label fw-bold") }}
+                                {{ form.trade_type(class="form-select", id="trade_type") }}
+                                {% if form.trade_type.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.trade_type.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Options-specific fields (hidden by default) -->
+                    <div id="options-fields" style="display: none;">
+                        <h6 class="text-info mb-3">
+                            <i class="fas fa-certificate me-2"></i>
+                            Options Details
+                        </h6>
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    {{ form.strike_price.label(class="form-label") }}
+                                    {{ form.strike_price(class="form-control") }}
+                                    {% if form.strike_price.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.strike_price.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    {{ form.expiration_date.label(class="form-label") }}
+                                    {{ form.expiration_date(class="form-control") }}
+                                    {% if form.expiration_date.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.expiration_date.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    {{ form.premium_paid.label(class="form-label") }}
+                                    {{ form.premium_paid(class="form-control") }}
+                                    {% if form.premium_paid.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.premium_paid.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    {{ form.implied_volatility.label(class="form-label") }}
+                                    {{ form.implied_volatility(class="form-control") }}
+                                    {% if form.implied_volatility.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.implied_volatility.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Underlying Stock Prices -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.underlying_price_at_entry.label(class="form-label") }}
+                                    {{ form.underlying_price_at_entry(class="form-control") }}
+                                    {% if form.underlying_price_at_entry.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.underlying_price_at_entry.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.underlying_price_at_exit.label(class="form-label") }}
+                                    {{ form.underlying_price_at_exit(class="form-control") }}
+                                    {% if form.underlying_price_at_exit.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.underlying_price_at_exit.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Greeks (collapsible section) -->
+                        <div class="mb-4">
+                            <button class="btn btn-outline-secondary btn-sm mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#greeks-section" aria-expanded="false">
+                                <i class="fas fa-calculator me-1"></i>
+                                Advanced: Greeks (Optional)
+                            </button>
+                            <div class="collapse" id="greeks-section">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            {{ form.delta.label(class="form-label") }}
+                                            {{ form.delta(class="form-control") }}
+                                            <small class="text-muted">Price sensitivity</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            {{ form.gamma.label(class="form-label") }}
+                                            {{ form.gamma(class="form-control") }}
+                                            <small class="text-muted">Delta sensitivity</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            {{ form.theta.label(class="form-label") }}
+                                            {{ form.theta(class="form-control") }}
+                                            <small class="text-muted">Time decay</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            {{ form.vega.label(class="form-label") }}
+                                            {{ form.vega(class="form-control") }}
+                                            <small class="text-muted">Volatility sensitivity</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Spread-specific fields (hidden by default) -->
+                    <div id="spread-fields" style="display: none;">
+                        <h6 class="text-warning mb-3">
+                            <i class="fas fa-arrows-alt-h me-2"></i>
+                            Credit Spread Details
+                        </h6>
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.short_strike.label(class="form-label") }}
+                                    {{ form.short_strike(class="form-control") }}
+                                    <small class="text-muted">Strike price of the option you sell</small>
+                                    {% if form.short_strike.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.short_strike.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.long_strike.label(class="form-label") }}
+                                    {{ form.long_strike(class="form-control") }}
+                                    <small class="text-muted">Strike price of the option you buy (protection)</small>
+                                    {% if form.long_strike.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.long_strike.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    {{ form.short_premium.label(class="form-label") }}
+                                    {{ form.short_premium(class="form-control") }}
+                                    <small class="text-muted">Premium received for short leg</small>
+                                    {% if form.short_premium.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.short_premium.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    {{ form.long_premium.label(class="form-label") }}
+                                    {{ form.long_premium(class="form-control") }}
+                                    <small class="text-muted">Premium paid for long leg</small>
+                                    {% if form.long_premium.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.long_premium.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    {{ form.net_credit.label(class="form-label") }}
+                                    {{ form.net_credit(class="form-control") }}
+                                    <small class="text-muted">Net credit received</small>
+                                    {% if form.net_credit.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.net_credit.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Entry Information -->
+                    <h6 class="text-primary mb-3">
+                        <i class="fas fa-sign-in-alt me-2"></i>
+                        Entry Information
+                    </h6>
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                {{ form.entry_date.label(class="form-label") }}
+                                {{ form.entry_date(class="form-control") }}
+                                {% if form.entry_date.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.entry_date.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label" id="entry-price-label">Entry Price ($)</label>
+                                {{ form.entry_price(class="form-control") }}
+                                <small class="text-muted" id="entry-price-help">Price per share/contract</small>
+                                {% if form.entry_price.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.entry_price.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label" id="quantity-label">Quantity</label>
+                                {{ form.quantity(class="form-control") }}
+                                <small class="text-muted" id="quantity-help">Number of shares/contracts</small>
+                                {% if form.quantity.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.quantity.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Risk Management -->
+                    <h6 class="text-warning mb-3">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Risk Management
+                    </h6>
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                {{ form.stop_loss.label(class="form-label") }}
+                                {{ form.stop_loss(class="form-control") }}
+                                {% if form.stop_loss.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.stop_loss.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                {{ form.take_profit.label(class="form-label") }}
+                                {{ form.take_profit(class="form-control") }}
+                                {% if form.take_profit.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.take_profit.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                {{ form.risk_amount.label(class="form-label") }}
+                                {{ form.risk_amount(class="form-control") }}
+                                {% if form.risk_amount.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.risk_amount.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Exit Information -->
+                    <h6 class="text-success mb-3">
+                        <i class="fas fa-sign-out-alt me-2"></i>
+                        Exit Information <small class="text-muted">(Optional - leave blank for open trades)</small>
+                    </h6>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.exit_date.label(class="form-label") }}
+                                {{ form.exit_date(class="form-control") }}
+                                {% if form.exit_date.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.exit_date.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.exit_price.label(class="form-label") }}
+                                {{ form.exit_price(class="form-control") }}
+                                {% if form.exit_price.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.exit_price.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Trade Context -->
+                    <h6 class="text-info mb-3">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Trade Context
+                    </h6>
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                {{ form.setup_type.label(class="form-label") }}
+                                {{ form.setup_type(class="form-select") }}
+                                {% if form.setup_type.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.setup_type.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                {{ form.market_condition.label(class="form-label") }}
+                                {{ form.market_condition(class="form-select") }}
+                                {% if form.market_condition.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.market_condition.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                {{ form.timeframe.label(class="form-label") }}
+                                {{ form.timeframe(class="form-select") }}
+                                {% if form.timeframe.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.timeframe.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Reasoning and Notes -->
+                    <h6 class="text-secondary mb-3">
+                        <i class="fas fa-comment me-2"></i>
+                        Your Analysis & Notes
+                    </h6>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.entry_reason.label(class="form-label") }}
+                                {{ form.entry_reason(class="form-control") }}
+                                {% if form.entry_reason.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.entry_reason.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.exit_reason.label(class="form-label") }}
+                                {{ form.exit_reason(class="form-control") }}
+                                {% if form.exit_reason.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.exit_reason.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                {{ form.notes.label(class="form-label") }}
+                                {{ form.notes(class="form-control") }}
+                                {% if form.notes.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.notes.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                {{ form.tags.label(class="form-label") }}
+                                {{ form.tags(class="form-control") }}
+                                {% if form.tags.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.tags.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Chart Screenshots -->
+                    <h6 class="text-purple mb-3">
+                        <i class="fas fa-camera me-2"></i>
+                        Chart Screenshots <span class="badge bg-info">Enhanced AI Analysis</span>
+                    </h6>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.entry_chart_image.label(class="form-label") }}
+                                {{ form.entry_chart_image(class="form-control") }}
+                                {% if form.entry_chart_image.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.entry_chart_image.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <small class="text-muted">Upload a screenshot of your chart at entry time</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.exit_chart_image.label(class="form-label") }}
+                                {{ form.exit_chart_image(class="form-control") }}
+                                {% if form.exit_chart_image.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.exit_chart_image.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <small class="text-muted">Upload a screenshot of your chart at exit time</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <div class="d-grid">
+                        {{ form.submit(class="btn btn-primary btn-lg") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar with Tips -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-lightbulb text-warning me-2"></i>
+                    Trading Tips
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6 class="text-primary">📊 Setup Types</h6>
+                    <small class="text-muted">
+                        Choose the pattern or setup that prompted your trade:
+                        breakout, pullback, reversal, support/resistance, etc.
+                    </small>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-warning">🛡️ Risk Management</h6>
+                    <small class="text-muted">
+                        Always set stop losses and consider your risk/reward ratio. 
+                        A good rule is to risk no more than 2% of your account per trade.
+                    </small>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-success">📝 Documentation</h6>
+                    <small class="text-muted">
+                        The more detail you provide about your reasoning, 
+                        the better the AI can analyze and help improve your trading.
+                    </small>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-info">🤖 AI Analysis</h6>
+                    <small class="text-muted">
+                        Upload chart screenshots for enhanced AI analysis! The AI will analyze 
+                        your charts to provide detailed technical feedback on entry/exit timing, 
+                        support/resistance levels, and pattern recognition.
+                    </small>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-purple">📸 Chart Screenshots</h6>
+                    <small class="text-muted">
+                        For best results, upload clear screenshots showing key levels, 
+                        indicators, and the timeframe you used for your trade decisions.
+                    </small>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-info">📋 Options Trading</h6>
+                    <small class="text-muted">
+                        For options trades, include strike price, expiration, and underlying stock price. 
+                        Greeks and implied volatility help the AI provide better analysis of your options strategy.
+                    </small>
+                </div>
+                
+                <div class="mb-0">
+                    <h6 class="text-warning">⏰ Time Decay</h6>
+                    <small class="text-muted">
+                        Options lose value over time (theta decay). Consider how much time 
+                        you have until expiration and how it affects your strategy.
+                    </small>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-success">💰 Credit Spreads</h6>
+                    <small class="text-muted">
+                        Credit spreads collect premium upfront. For put spreads: sell higher strike, buy lower strike. 
+                        For call spreads: sell lower strike, buy higher strike. Max profit = net credit received.
+                    </small>
+                </div>
+                
+                <div class="mb-0">
+                    <h6 class="text-primary">📐 Strike Selection</h6>
+                    <small class="text-muted">
+                        Choose strikes based on your market outlook and risk tolerance. 
+                        Wider spreads = more credit but higher risk. Closer to money = more credit but lower probability.
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Reference -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-clock text-info me-2"></i>
+                    Quick Reference
+                </h6>
+            </div>
+            <div class="card-body">
+                <small>
+                    <strong>Date Format:</strong> YYYY-MM-DD HH:MM<br>
+                    <strong>Price Format:</strong> Decimal (e.g., 150.25)<br>
+                    <strong>Tags:</strong> Comma-separated (momentum, earnings)<br>
+                    <strong>Open Trades:</strong> Leave exit fields blank
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    // Auto-fill current date/time for entry if empty
+    document.addEventListener('DOMContentLoaded', function() {
+        const entryDateField = document.getElementById('entry_date');
+        if (entryDateField && !entryDateField.value) {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            entryDateField.value = `${year}-${month}-${day} ${hours}:${minutes}`;
+        }
+        
+        // Initialize options fields visibility
+        toggleOptionsFields();
+        
+        // Add event listener for trade type changes
+        const tradeTypeField = document.getElementById('trade_type');
+        if (tradeTypeField) {
+            tradeTypeField.addEventListener('change', toggleOptionsFields);
+        }
+    });
+    
+    function toggleOptionsFields() {
+        const tradeType = document.getElementById('trade_type').value;
+        const optionsFields = document.getElementById('options-fields');
+        const spreadFields = document.getElementById('spread-fields');
+        const entryPriceLabel = document.getElementById('entry-price-label');
+        const entryPriceHelp = document.getElementById('entry-price-help');
+        const quantityLabel = document.getElementById('quantity-label');
+        const quantityHelp = document.getElementById('quantity-help');
+        
+        const isOption = tradeType === 'option_call' || tradeType === 'option_put';
+        const isSpread = tradeType === 'credit_put_spread' || tradeType === 'credit_call_spread';
+        
+        // Show/hide options fields
+        if (optionsFields) {
+            optionsFields.style.display = (isOption && !isSpread) ? 'block' : 'none';
+        }
+        
+        // Show/hide spread fields
+        if (spreadFields) {
+            spreadFields.style.display = isSpread ? 'block' : 'none';
+        }
+        
+        // Update labels and help text
+        if (isSpread) {
+            if (entryPriceLabel) entryPriceLabel.textContent = 'Exit Premium ($)';
+            if (entryPriceHelp) entryPriceHelp.textContent = 'Premium paid to close the spread (if closed early)';
+            if (quantityLabel) quantityLabel.textContent = 'Number of Spreads';
+            if (quantityHelp) quantityHelp.textContent = 'Number of spread contracts';
+        } else if (isOption) {
+            if (entryPriceLabel) entryPriceLabel.textContent = 'Premium Per Contract ($)';
+            if (entryPriceHelp) entryPriceHelp.textContent = 'Premium paid per contract';
+            if (quantityLabel) quantityLabel.textContent = 'Number of Contracts';
+            if (quantityHelp) quantityHelp.textContent = 'Number of option contracts';
+        } else {
+            if (entryPriceLabel) entryPriceLabel.textContent = 'Entry Price ($)';
+            if (entryPriceHelp) entryPriceHelp.textContent = 'Price per share';
+            if (quantityLabel) quantityLabel.textContent = 'Quantity/Shares';
+            if (quantityHelp) quantityHelp.textContent = 'Number of shares';
+        }
+        
+        // Update form validation requirements
+        updateValidationRequirements(isOption || isSpread);
+    }
+    
+    function updateValidationRequirements(isOption) {
+        const strikePrice = document.querySelector('input[name="strike_price"]');
+        const expirationDate = document.querySelector('input[name="expiration_date"]');
+        
+        if (strikePrice && expirationDate) {
+            if (isOption) {
+                strikePrice.setAttribute('required', 'required');
+                expirationDate.setAttribute('required', 'required');
+            } else {
+                strikePrice.removeAttribute('required');
+                expirationDate.removeAttribute('required');
+            }
+        }
+    }
+    
+    // Calculate option metrics automatically
+    function calculateOptionMetrics() {
+        const strikePrice = parseFloat(document.querySelector('input[name="strike_price"]').value) || 0;
+        const underlyingPrice = parseFloat(document.querySelector('input[name="underlying_price_at_entry"]').value) || 0;
+        const premium = parseFloat(document.querySelector('input[name="entry_price"]').value) || 0;
+        const tradeType = document.getElementById('trade_type').value;
+        
+        if (strikePrice && underlyingPrice && premium) {
+            let intrinsicValue = 0;
+            
+            if (tradeType === 'option_call') {
+                intrinsicValue = Math.max(0, underlyingPrice - strikePrice);
+            } else if (tradeType === 'option_put') {
+                intrinsicValue = Math.max(0, strikePrice - underlyingPrice);
+            }
+            
+            const timeValue = Math.max(0, premium - intrinsicValue);
+            
+            // You could display these calculated values in the UI
+            console.log('Intrinsic Value:', intrinsicValue);
+            console.log('Time Value:', timeValue);
+        }
+    }
+    
+    // Add event listeners for automatic calculations
+    document.addEventListener('DOMContentLoaded', function() {
+        const calculationFields = [
+            'input[name="strike_price"]',
+            'input[name="underlying_price_at_entry"]',
+            'input[name="entry_price"]'
+        ];
+        
+        calculationFields.forEach(selector => {
+            const field = document.querySelector(selector);
+            if (field) {
+                field.addEventListener('input', calculateOptionMetrics);
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %} 

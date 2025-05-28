@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}Trading Tools - AI Trading Analysis{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-calculator text-primary me-2"></i>
+        Trading Tools & Calculators
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <span class="badge bg-info">Professional Tools</span>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Options Calculator -->
+    <div class="col-lg-6 col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line text-info me-2"></i>
+                    Options Calculator
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    Analyze options chains with live data, calculate P&L scenarios, and view detailed option metrics including Greeks, breakeven points, and risk/reward analysis.
+                </p>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success me-2"></i>Live options chains</li>
+                    <li><i class="fas fa-check text-success me-2"></i>P&L scenario analysis</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Greeks calculation</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Risk/reward metrics</li>
+                </ul>
+                <a href="{{ url_for('options_calculator') }}" class="btn btn-primary">
+                    <i class="fas fa-external-link-alt me-1"></i>
+                    Launch Calculator
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Black-Scholes Calculator -->
+    <div class="col-lg-6 col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-calculator text-warning me-2"></i>
+                    Black-Scholes Pricing
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    Calculate theoretical option prices using the Black-Scholes model. Get precise pricing and Greeks calculations for any option contract.
+                </p>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success me-2"></i>Theoretical pricing</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Full Greeks suite</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Custom parameters</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Academic accuracy</li>
+                </ul>
+                <a href="{{ url_for('black_scholes_calculator') }}" class="btn btn-warning">
+                    <i class="fas fa-external-link-alt me-1"></i>
+                    Launch Calculator
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Lookup -->
+    <div class="col-lg-6 col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-search text-success me-2"></i>
+                    Stock Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    Get comprehensive stock information including real-time prices, fundamental data, charts, and key financial metrics.
+                </p>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success me-2"></i>Real-time pricing</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Financial metrics</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Historical charts</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Company information</li>
+                </ul>
+                <a href="{{ url_for('stock_lookup') }}" class="btn btn-success">
+                    <i class="fas fa-external-link-alt me-1"></i>
+                    Search Stocks
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coming Soon - Position Sizing -->
+    <div class="col-lg-6 col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-balance-scale text-secondary me-2"></i>
+                    Position Sizing Calculator
+                    <span class="badge bg-secondary ms-2">Coming Soon</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text text-muted">
+                    Calculate optimal position sizes based on your risk tolerance, account size, and trading strategy. Advanced risk management tools.
+                </p>
+                <ul class="list-unstyled text-muted">
+                    <li><i class="fas fa-hourglass-half me-2"></i>Risk-based sizing</li>
+                    <li><i class="fas fa-hourglass-half me-2"></i>Kelly criterion</li>
+                    <li><i class="fas fa-hourglass-half me-2"></i>Portfolio allocation</li>
+                    <li><i class="fas fa-hourglass-half me-2"></i>Stop-loss integration</li>
+                </ul>
+                <button class="btn btn-secondary" disabled>
+                    <i class="fas fa-clock me-1"></i>
+                    Coming Soon
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Tools Section -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt text-primary me-2"></i>
+                    Quick Tools
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <div class="text-center p-3 border rounded">
+                            <i class="fas fa-percentage fa-2x text-info mb-2"></i>
+                            <h6>Profit Calculator</h6>
+                            <small class="text-muted">Quick P&L calculation</small>
+                            <br>
+                            <button class="btn btn-sm btn-outline-info mt-2" onclick="quickCalculator('profit')">
+                                Calculate
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="text-center p-3 border rounded">
+                            <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                            <h6>Time Decay</h6>
+                            <small class="text-muted">Theta calculation</small>
+                            <br>
+                            <button class="btn btn-sm btn-outline-warning mt-2" onclick="quickCalculator('theta')">
+                                Calculate
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="text-center p-3 border rounded">
+                            <i class="fas fa-arrows-alt fa-2x text-success mb-2"></i>
+                            <h6>Volatility</h6>
+                            <small class="text-muted">IV analysis</small>
+                            <br>
+                            <button class="btn btn-sm btn-outline-success mt-2" onclick="quickCalculator('volatility')">
+                                Analyze
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="text-center p-3 border rounded">
+                            <i class="fas fa-chart-area fa-2x text-danger mb-2"></i>
+                            <h6>Risk/Reward</h6>
+                            <small class="text-muted">Trade evaluation</small>
+                            <br>
+                            <button class="btn btn-sm btn-outline-danger mt-2" onclick="quickCalculator('risk')">
+                                Evaluate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Educational Resources -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-graduation-cap text-info me-2"></i>
+                    Educational Resources
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <h6><i class="fas fa-book text-primary me-2"></i>Options Basics</h6>
+                        <p class="small text-muted mb-2">Learn the fundamentals of options trading, including calls, puts, and basic strategies.</p>
+                        <a href="#" class="btn btn-sm btn-outline-primary">Read Guide</a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <h6><i class="fas fa-calculator text-warning me-2"></i>Greeks Explained</h6>
+                        <p class="small text-muted mb-2">Understand Delta, Gamma, Theta, and Vega and how they affect option pricing.</p>
+                        <a href="#" class="btn btn-sm btn-outline-warning">Learn More</a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <h6><i class="fas fa-shield-alt text-success me-2"></i>Risk Management</h6>
+                        <p class="small text-muted mb-2">Master position sizing, stop losses, and portfolio risk management techniques.</p>
+                        <a href="#" class="btn btn-sm btn-outline-success">Explore</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+function quickCalculator(type) {
+    // Quick calculator modals/functions can be implemented here
+    alert(`${type.charAt(0).toUpperCase() + type.slice(1)} calculator coming soon!`);
+}
+</script>
+{% endblock %}
+{% endblock %} 

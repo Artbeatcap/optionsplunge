@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}Black-Scholes Calculator - AI Trading Analysis{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-calculator text-warning me-2"></i>
+        Black-Scholes Options Pricing
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('tools') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>
+            Back to Tools
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-cog me-2"></i>
+                    Input Parameters
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="bsForm">
+                    <div class="mb-3">
+                        <label for="stockPrice" class="form-label">Current Stock Price ($)</label>
+                        <input type="number" class="form-control" id="stockPrice" step="0.01" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="strikePrice" class="form-label">Strike Price ($)</label>
+                        <input type="number" class="form-control" id="strikePrice" step="0.01" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="timeToExpiration" class="form-label">Time to Expiration (days)</label>
+                        <input type="number" class="form-control" id="timeToExpiration" min="1" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="riskFreeRate" class="form-label">Risk-Free Rate (%)</label>
+                        <input type="number" class="form-control" id="riskFreeRate" step="0.01" value="5.0" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="volatility" class="form-label">Implied Volatility (%)</label>
+                        <input type="number" class="form-control" id="volatility" step="0.01" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="optionType" class="form-label">Option Type</label>
+                        <select class="form-select" id="optionType" required>
+                            <option value="call">Call Option</option>
+                            <option value="put">Put Option</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-warning w-100">
+                        <i class="fas fa-calculator me-1"></i>
+                        Calculate Price & Greeks
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Results
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="results" style="display: none;">
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="alert alert-success">
+                                <h4 class="alert-heading">Theoretical Option Price</h4>
+                                <h2 class="mb-0" id="optionPrice">$0.00</h2>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6 class="text-warning mb-3">Greeks</h6>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5 id="deltaValue">0.0000</h5>
+                                    <small class="text-muted">Delta</small>
+                                    <br>
+                                    <small class="text-muted">Price sensitivity</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5 id="gammaValue">0.0000</h5>
+                                    <small class="text-muted">Gamma</small>
+                                    <br>
+                                    <small class="text-muted">Delta sensitivity</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5 id="thetaValue">0.0000</h5>
+                                    <small class="text-muted">Theta</small>
+                                    <br>
+                                    <small class="text-muted">Time decay</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5 id="vegaValue">0.0000</h5>
+                                    <small class="text-muted">Vega</small>
+                                    <br>
+                                    <small class="text-muted">Volatility sensitivity</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="placeholder" class="text-center text-muted">
+                    <i class="fas fa-calculator fa-3x mb-3"></i>
+                    <p>Enter parameters and click calculate to see results</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Educational Information -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    About Black-Scholes Model
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Model Assumptions</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>Constant risk-free rate</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Constant volatility</li>
+                            <li><i class="fas fa-check text-success me-2"></i>No dividends</li>
+                            <li><i class="fas fa-check text-success me-2"></i>European-style exercise</li>
+                            <li><i class="fas fa-check text-success me-2"></i>No transaction costs</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Greeks Explained</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Delta:</strong> Change in option price per $1 change in stock price</li>
+                            <li><strong>Gamma:</strong> Change in delta per $1 change in stock price</li>
+                            <li><strong>Theta:</strong> Change in option price per day (time decay)</li>
+                            <li><strong>Vega:</strong> Change in option price per 1% change in volatility</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+document.getElementById('bsForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        stock_price: parseFloat(document.getElementById('stockPrice').value),
+        strike_price: parseFloat(document.getElementById('strikePrice').value),
+        time_to_expiration: parseFloat(document.getElementById('timeToExpiration').value),
+        risk_free_rate: parseFloat(document.getElementById('riskFreeRate').value),
+        volatility: parseFloat(document.getElementById('volatility').value),
+        option_type: document.getElementById('optionType').value
+    };
+    
+    fetch('/tools/calculate-bs', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('optionPrice').textContent = '$' + data.price.toFixed(4);
+            document.getElementById('deltaValue').textContent = data.greeks.delta;
+            document.getElementById('gammaValue').textContent = data.greeks.gamma;
+            document.getElementById('thetaValue').textContent = data.greeks.theta;
+            document.getElementById('vegaValue').textContent = data.greeks.vega;
+            
+            document.getElementById('placeholder').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Calculation failed: ' + error);
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

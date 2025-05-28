@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Lookup - AI Trading Analysis{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-search text-success me-2"></i>
+        Stock Information Lookup
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('tools') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>
+            Back to Tools
+        </a>
+    </div>
+</div>
+
+<!-- Search Form -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-search me-2"></i>
+            Search Stock
+        </h5>
+    </div>
+    <div class="card-body">
+        <form id="stockSearchForm">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-8">
+                    <label for="symbol" class="form-label">Stock Symbol</label>
+                    <input type="text" class="form-control" id="symbol" required 
+                           placeholder="Enter stock symbol (e.g., AAPL, TSLA, SPY)" style="text-transform: uppercase;">
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-search me-1"></i>
+                        Search
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Stock Information Display -->
+<div id="stockInfo" style="display: none;">
+    <!-- Stock Header -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h3 id="stockName" class="mb-1">Company Name</h3>
+                    <h4 id="stockSymbol" class="text-muted mb-2">SYMBOL</h4>
+                    <h2 id="currentPrice" class="mb-0">$0.00</h2>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div id="priceChange" class="h4 mb-2">+$0.00 (0.00%)</div>
+                    <span class="badge bg-primary">Live Data</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <h5 id="previousClose">$0.00</h5>
+                    <small class="text-muted">Previous Close</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <h5 id="volume">0</h5>
+                    <small class="text-muted">Volume</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <h5 id="marketCap">$0</h5>
+                    <small class="text-muted">Market Cap</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <h5 id="peRatio">N/A</h5>
+                    <small class="text-muted">P/E Ratio</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Metrics -->
+    <div class="row mb-4">
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6 id="fiftyTwoWeekHigh">$0.00</h6>
+                    <small class="text-muted">52 Week High</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6 id="fiftyTwoWeekLow">$0.00</h6>
+                    <small class="text-muted">52 Week Low</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6 id="dividendYield">N/A</h6>
+                    <small class="text-muted">Dividend Yield</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Price Chart -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-chart-line me-2"></i>
+                30-Day Price Chart
+            </h5>
+        </div>
+        <div class="card-body">
+            <div id="priceChart"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading State -->
+<div id="loading" style="display: none;">
+    <div class="text-center">
+        <div class="spinner-border text-success" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Fetching stock information...</p>
+    </div>
+</div>
+
+<!-- Error State -->
+<div id="error" style="display: none;">
+    <div class="alert alert-danger">
+        <h4 class="alert-heading">Error</h4>
+        <p id="errorMessage">Failed to fetch stock information.</p>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+document.getElementById('stockSearchForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const symbol = document.getElementById('symbol').value.toUpperCase();
+    if (!symbol) return;
+    
+    // Show loading state
+    document.getElementById('stockInfo').style.display = 'none';
+    document.getElementById('error').style.display = 'none';
+    document.getElementById('loading').style.display = 'block';
+    
+    fetch(`/api/stock-info/${symbol}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('loading').style.display = 'none';
+            
+            if (data.success) {
+                displayStockInfo(data.data);
+            } else {
+                showError(data.error);
+            }
+        })
+        .catch(error => {
+            document.getElementById('loading').style.display = 'none';
+            showError('Failed to fetch stock information');
+        });
+});
+
+function displayStockInfo(stock) {
+    // Update header information
+    document.getElementById('stockName').textContent = stock.name;
+    document.getElementById('stockSymbol').textContent = stock.symbol;
+    document.getElementById('currentPrice').textContent = '$' + stock.current_price.toFixed(2);
+    
+    // Update price change
+    const change = stock.change || 0;
+    const changePercent = stock.change_percent || 0;
+    const priceChangeElement = document.getElementById('priceChange');
+    const changeText = (change >= 0 ? '+' : '') + '$' + change.toFixed(2) + ' (' + changePercent.toFixed(2) + '%)';
+    priceChangeElement.textContent = changeText;
+    priceChangeElement.className = change >= 0 ? 'h4 mb-2 text-success' : 'h4 mb-2 text-danger';
+    
+    // Update metrics
+    document.getElementById('previousClose').textContent = '$' + (stock.previous_close || 0).toFixed(2);
+    document.getElementById('volume').textContent = formatNumber(stock.volume || 0);
+    document.getElementById('marketCap').textContent = formatCurrency(stock.market_cap || 0);
+    document.getElementById('peRatio').textContent = stock.pe_ratio ? stock.pe_ratio.toFixed(2) : 'N/A';
+    document.getElementById('fiftyTwoWeekHigh').textContent = '$' + (stock.fifty_two_week_high || 0).toFixed(2);
+    document.getElementById('fiftyTwoWeekLow').textContent = '$' + (stock.fifty_two_week_low || 0).toFixed(2);
+    document.getElementById('dividendYield').textContent = stock.dividend_yield ? 
+        (stock.dividend_yield * 100).toFixed(2) + '%' : 'N/A';
+    
+    // Create price chart
+    if (stock.chart_data && stock.chart_data.dates && stock.chart_data.prices) {
+        createPriceChart(stock.chart_data.dates, stock.chart_data.prices, stock.symbol);
+    }
+    
+    // Show stock info
+    document.getElementById('stockInfo').style.display = 'block';
+}
+
+function createPriceChart(dates, prices, symbol) {
+    const trace = {
+        x: dates,
+        y: prices,
+        type: 'scatter',
+        mode: 'lines',
+        name: symbol,
+        line: {
+            color: 'rgb(31, 119, 180)',
+            width: 2
+        }
+    };
+    
+    const layout = {
+        title: `${symbol} - 30 Day Price History`,
+        xaxis: {
+            title: 'Date',
+            type: 'date'
+        },
+        yaxis: {
+            title: 'Price ($)'
+        },
+        height: 400,
+        margin: {t: 50, b: 50, l: 60, r: 20},
+        showlegend: false
+    };
+    
+    Plotly.newPlot('priceChart', [trace], layout, {responsive: true});
+}
+
+function showError(message) {
+    document.getElementById('errorMessage').textContent = message;
+    document.getElementById('error').style.display = 'block';
+}
+
+function formatNumber(num) {
+    if (num >= 1e9) {
+        return (num / 1e9).toFixed(1) + 'B';
+    } else if (num >= 1e6) {
+        return (num / 1e6).toFixed(1) + 'M';
+    } else if (num >= 1e3) {
+        return (num / 1e3).toFixed(1) + 'K';
+    }
+    return num.toLocaleString();
+}
+
+function formatCurrency(num) {
+    if (num >= 1e12) {
+        return '$' + (num / 1e12).toFixed(1) + 'T';
+    } else if (num >= 1e9) {
+        return '$' + (num / 1e9).toFixed(1) + 'B';
+    } else if (num >= 1e6) {
+        return '$' + (num / 1e6).toFixed(1) + 'M';
+    } else if (num >= 1e3) {
+        return '$' + (num / 1e3).toFixed(1) + 'K';
+    }
+    return '$' + num.toLocaleString();
+}
+</script>
+{% endblock %}
+{% endblock %} 
